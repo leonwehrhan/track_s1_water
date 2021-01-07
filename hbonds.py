@@ -1,4 +1,5 @@
 import numpy as np
+import re
 
 
 def map_w_to_index(t, t_red, idx_file, atom_mapping, verbose=False):
@@ -163,3 +164,95 @@ def hbond_to_string(hbonds,
         hbonds_new.append(frame_new)
 
     return hbonds_new
+
+
+def hbond_matrix(hbond_trjs):
+    '''
+    Extract hbond frequency matrix from list of donor-acceptor arrays for each frame.
+
+    Parameters
+    ----------
+    hbond_trjs : list
+        Contains lists of np.ndarray for each trj for the hydrogen bonds in each
+        frame.
+
+    Returns
+    -------
+    hbond_matrix : np.ndarray
+        2D Array of shape (donors,acceptors) with frequency for each hbond.
+    donors : list
+        Donors cooresponding to indices in H-bond matrix.
+    acceptors : list
+        Acceptors corresponding to indices in H-bond matrix.
+
+    '''
+    # total number of frames
+    n_frames_tot = 0
+
+    # total possible donors/acceptors
+    donors = []
+    acceptors = []
+
+    for hbonds in hbond_trjs:
+        # add frames of trjs to total number of frames
+        n_frames_tot += len(hbonds)
+
+        # add to list of possible donors and acceptors
+        for frame in hbonds:
+            don_frame = frame[:, 0]
+            acc_frame = frame[:, 1]
+            for do in don_frame:
+                if do not in donors:
+                    donors.append(do)
+            for ac in acc_frame:
+                if ac not in acceptors:
+                    acceptors.append(ac)
+
+    # sort donors/acceptors so mutual atoms are sorted before non mutual donors/acceptors
+    donors_sorted = []
+    acceptors_sorted = []
+    for do in donors:
+        if do in acceptors:
+            donors_sorted.append(do)
+            acceptors_sorted.append(do)
+
+    donors_sorted = sorted(donors_sorted, key=lambda x: _resseq_finder(x))
+    acceptors_sorted = sorted(acceptors_sorted, key=lambda x: _resseq_finder(x))
+
+    for do in donors:
+        if do not in donors_sorted:
+            donors_sorted.append(do)
+    for ac in acceptors:
+        if ac not in acceptors_sorted:
+            acceptors_sorted.append(ac)
+
+    donors = donors_sorted
+    acceptors = acceptors_sorted
+
+    # initialize hbond matrix
+    hbond_matrix = np.zeros((len(donors), len(acceptors)))
+
+    # set values of hbnod matrix
+    for hbonds in hbond_trjs:
+        for frame in hbonds:
+            for hb in frame:
+                i_donor = donors.index(hb[0])
+                i_acceptor = acceptors.index(hb[1])
+
+                hbond_matrix[i_donor, i_acceptor] += 1
+
+    # normalize
+    hbond_matrix = hbond_matrix / n_frames_tot
+
+    return (hbond_matrix, donors, acceptors)
+
+
+def _resseq_finder(s):
+    '''Get resSeq from donor/acceptor string.'''
+    p = re.search(r'[0-9]+', s)
+    if p:
+        return int(p[0])
+    else:
+        # hbond string does not include resseq, i.e. letter code
+        # return unicode from string + 10000
+        return ord(s) + 10000
