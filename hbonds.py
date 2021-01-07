@@ -65,12 +65,15 @@ def map_w_to_index(t, t_red, idx_file, atom_mapping, verbose=False):
 
 def convert_hb_atom(idx,
                     t,
-                    is_sidechain=None,
-                    is_water=None,
+                    sidechain_ids=None,
+                    water_ids=None,
                     wlet_mapping=None,
-                    mapping_frame=None):
+                    i_frame=None):
     '''
-    Converts atom index to hbond string.
+    Convert atom index to hbond string.
+
+    The hbond string indicates the residue of donor and acceptor and wether the
+    sidechain or backbone of the residue will be involved.
 
     Parameters
     ----------
@@ -78,35 +81,43 @@ def convert_hb_atom(idx,
         Atom index of hydrogen bond donor or acceptor.
     t : md.Trajectory
         Trajectory in which the atom index can be found.
-    is_sidechain : np.ndarray or None
+    sidechain_ids : np.ndarray or None
         Atom indices of sidechain atoms in trajectory. If None, will be selected
         from t.
-    is_water : np.ndarray or None
+    water_ids : np.ndarray or None
         Atom indices of water atoms in trajectory. If None, will be selected
         from t.
-    wlet_mapping : 
+    wlet_mapping : dict or None
+        Mapping of water residue indices to letter codes.
+    i_frame : int or None
+        Number of current frame. Needed when wlet mapping is enabled.
+
+    Returns
+    -------
+    s : str
+        Hbond string.
     '''
     # already converted
     if type(idx) == str:
         return idx
 
-    # not ideal to load every time
-    if not type(is_sidechain) == np.ndarray:
-        is_sidechain = t.top.select('is_sidechain')
-    if not type(is_water) == np.ndarray:
-        is_water = t.top.select('is_water')
+    # load water and sidechain atom indices
+    if not type(sidechain_ids) == np.ndarray:
+        sidechain_ids = t.top.select('is_sidechain')
+    if not type(water_ids) == np.ndarray:
+        water_ids = t.top.select('is_water')
 
     a = t.top.atom(idx)
-    if idx in is_water:
+    if idx in water_ids:
         if wlet_mapping:
             s = a.residue.name + str(a.residue.resSeq) + 'w' + f'-{a.element.symbol}'
             for wl in wlet_mapping:
-                w_id = wlet_mapping[wl].astype('int')[mapping_frame]
+                w_id = wlet_mapping[wl].astype('int')[i_frame]
                 if w_id == a.residue.index and w_id != 0:
                     s = wl
         else:
             s = a.residue.name + str(a.residue.resSeq) + 'w' + f'-{a.element.symbol}'
-    elif idx in is_sidechain:
+    elif idx in sidechain_ids:
         s = a.residue.name + str(a.residue.resSeq) + 's' + f'-{a.element.symbol}'
     else:
         s = a.residue.name + str(a.residue.resSeq) + 'b' + f'-{a.element.symbol}'
@@ -117,7 +128,7 @@ def hbond_to_string(hbonds,
                     t,
                     wlet_mapping=None):
     '''
-    Converts atom indices from mdtraj hbond output to strings indicating residue and sidechain/backbone. Deletes H-Atom.
+    Convert atom indices from mdtraj hbond output to strings indicating residue and sidechain/backbone. Deletes H-Atom.
 
     Parameters
     ----------
@@ -129,21 +140,23 @@ def hbond_to_string(hbonds,
     Returns
     -------
     hbonds_new : list of np.ndarray
-        Hbonds with replaced atom indices for strings.
+        Hbonds with hbond strings instead of atom indices.
     '''
     hbonds_new = []
-    is_sidechain = t.top.select('is_sidechain')
-    is_water = t.top.select('is_water')
+
+    # load sidechain and water atom indices
+    sidechain_ids = t.top.select('is_sidechain')
+    water_ids = t.top.select('is_water')
 
     for i_frame, frame in enumerate(hbonds):
         if not wlet_mapping:
-            donors = np.array([convert_hb_atom(x, t, is_sidechain, is_water) for x in frame.T[0]])
-            acceptors = np.array([convert_hb_atom(x, t, is_sidechain, is_water)
+            donors = np.array([convert_hb_atom(x, t, sidechain_ids, water_ids) for x in frame.T[0]])
+            acceptors = np.array([convert_hb_atom(x, t, sidechain_ids, water_ids)
                                   for x in frame.T[2]])
         else:
-            donors = np.array([convert_hb_atom(x, t, is_sidechain, is_water,
+            donors = np.array([convert_hb_atom(x, t, sidechain_ids, water_ids,
                                                wlet_mapping, i_frame) for x in frame.T[0]])
-            acceptors = np.array([convert_hb_atom(x, t, is_sidechain, is_water,
+            acceptors = np.array([convert_hb_atom(x, t, sidechain_ids, water_ids,
                                                   wlet_mapping, i_frame) for x in frame.T[2]])
 
         frame_new = np.dstack((donors, acceptors))[0]
