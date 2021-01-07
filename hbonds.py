@@ -270,14 +270,13 @@ def hbond_timeline(hbond_trjs, s):
     s : str
         Hbond string of the H-bond participant to be analyzed.
     '''
-    n_frames_tot = 0
-    n_frames = np.zeros(len(hbond_trjs))
-
     # atoms to which participant donantes to (acc.) and accepts from (don.)
     donates_to = {}
     accepts_from = {}
 
-    # number of frames from trajectories
+    # number of frames of individual trajectories and total number of frames
+    n_frames_tot = 0
+    n_frames = np.zeros(len(hbond_trjs))
     for i_trj, hbonds in enumerate(hbond_trjs):
         n_frames_tot += len(hbonds)
         n_frames[i_trj] = len(hbonds)
@@ -304,3 +303,67 @@ def hbond_timeline(hbond_trjs, s):
                 if do not in accepts_from:
                     accepts_from[do] = np.zeros(n_frames_tot, dtype=int)
                 accepts_from[do][int(n_frames[:i_trj].sum() + i_frame)] += 1
+
+    return donates_to, accepts_from
+
+
+def hbond_most_frequent(hbond_trjs, s):
+    '''
+    Identify most frequent donors and acceptors to specified participant.
+
+    Parameters
+    ----------
+    hbond_trjs : list
+        Contains lists of np.ndarray for each trj for the hydrogen bonds in each
+        frame.
+    s : str
+        Hbond string of the H-bond participant to be analyzed.
+    '''
+    donates_to, accepts_from = hbond_timeline(hbond_trjs, s)
+
+    # total number of frames
+    n_frames_tot = len(list(donates_to.values())[0])
+
+    # most common donors and acceptors
+    donors_frequency = {}
+    acceptors_frequency = {}
+
+    # calculate frequencies
+    for do in accepts_from:
+        donors_frequency[do] = np.count_nonzero(accepts_from[do]) / n_frames_tot
+    for ac in donates_to:
+        acceptors_frequency[ac] = np.count_nonzero(donates_to[ac]) / n_frames_tot
+
+    # sort by highest frequency
+    donors_frequency = {k: v for k, v in sorted(
+        donors_frequency.items(), key=lambda item: item[1], reverse=True)}
+    acceptors_frequency = {k: v for k, v in sorted(
+        acceptors_frequency.items(), key=lambda item: item[1], reverse=True)}
+
+    return donors_frequency, acceptors_frequency
+
+
+def plot_frequency(ax, frequency, s, n=6, donors=True):
+    '''
+    '''
+    x = list(frequency.keys())[:n]
+    y = np.array([frequency[x] for x in x]) * 100  # percentage
+
+    if donors:
+        ax.bar(range(len(x)), y, color='darkblue')
+        ax.set_xticklabels(x, rotation=90)
+        ax.set_xlabel('Donors', weight='bold')
+    else:
+        ax.bar(range(len(x)), y, color='darkred')
+        ax.set_xticklabels(x, rotation=90)
+        ax.set_xlabel('Acceptors', weight='bold')
+
+    ax.set_xticks(range(n))
+    ax.set_ylabel('Frequency [%]')
+    ax.set_ylim(0, 100)
+    ax.text(0.98,
+            0.98,
+            s,
+            horizontalalignment='right',
+            verticalalignment='top',
+            transform=ax.transAxes)
