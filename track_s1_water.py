@@ -178,6 +178,9 @@ def assign_water_sites_voronoi(trj_file, ref_file, w_loc_ids, w_names, ref_file_
 
         assigned_sites[i_frame] = assigned_sites_frame
 
+        del t
+        del t_ref
+
     return assigned_sites
 
 
