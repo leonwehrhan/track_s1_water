@@ -33,7 +33,8 @@ def map_w_to_index(t, t_red, idx_file, atom_mapping, verbose=False):
     wrid_whole = np.loadtxt(idx_file).astype('int')
 
     # enforce integer type on mapping
-    atom_mapping = atom_mapping.astype('int')
+    for key in atom_mapping:
+        atom_mapping[key] = atom_mapping[key].astype('int')
 
     # list of letter codes from mapping
     letter_codes = [x for x in atom_mapping.keys()]

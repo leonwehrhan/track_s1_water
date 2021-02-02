@@ -361,7 +361,7 @@ def reduce_fluctuation(assigned_sites, t_l):
             # find most frequent value in timeframe
             slice = assigned_sites[:, i_wat][i_frame:i_frame + t_l]
             idx_max = np.bincount(slice).argmax()
-            assigned_wat[i_frame:i_frame + t_l] = np.array([idx_max] * t_l)
+            assigned_wat[i_frame:i_frame + t_l] = np.full(t_l, idx_max)
 
         assigned_sites_red[:, i_wat] = assigned_wat
 
@@ -431,6 +431,46 @@ def residence_time(assigned_sites, timestep=1):
         Residence times of waters at sites in picoseconds.
     '''
     pass
+
+
+def plot_transition_counts(ax, counts, w_names):
+    '''
+    Plot tranistion counts.
+
+    Parameters
+    ----------
+    ax : plt.Axes
+        Matplotlib ax.
+    counts : dict
+        Transition counts for each trj.
+    w_names : list of str
+        Water letter codes.
+    '''
+    ind = np.arange(len(w_names))
+    width = 0.1
+
+    ind_clip = len(counts) / 2 - 0.5
+    ind_bar = np.arange(-ind_clip, ind_clip + 1, 1)
+
+    colors = ['k', 'dimgrey', 'grey', 'silver']
+
+    for i_key, key in enumerate(counts):
+        means = np.mean(counts[key], axis=0)
+        errs = np.std(counts[key], axis=0)
+
+        ax.bar(ind + width * ind_bar[i_key],
+               means,
+               width,
+               yerr=errs,
+               label=key,
+               color=colors[i_key % 4],
+               edgecolor='k')
+
+    ax.set_xticks(ind)
+    ax.set(xticklabels=w_names)
+    ax.set_ylabel('Number of Water Molecules at Site')
+    ax.set_xlabel('S1 Water Site')
+    ax.legend()
 
 
 def _dist(xyz, frame, idx1, idx2):
