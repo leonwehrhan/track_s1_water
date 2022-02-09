@@ -319,6 +319,15 @@ def hbond_most_frequent(hbond_trjs, s):
         frame.
     s : str
         Hbond string of the H-bond participant to be analyzed.
+
+    Returns
+    -------
+    donors_frequency : dict
+        Donors, that donate hydrogen bonds to the analyzed participant and their
+        frequency how often they donate.
+    acceptors_frequency : dict
+        Acceptors, that accept hydrogen bonds frpom analyzed participant and
+        their frequency how often they accept.
     '''
     donates_to, accepts_from = hbond_timeline(hbond_trjs, s)
 
