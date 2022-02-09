@@ -178,8 +178,8 @@ def assign_water_sites_voronoi(trj_file, ref_file, w_loc_ids, w_names, ref_file_
 
         assigned_sites[i_frame] = assigned_sites_frame
 
-        del t
-        del t_ref
+    del t
+    del t_ref
 
     return assigned_sites
 
@@ -286,7 +286,7 @@ def residence_time(assigned_sites, timestep=1):
     pass
 
 
-def plot_transition_counts(ax, counts, w_names):
+def plot_transition_counts(ax, counts, w_names, width=0.1, colors=['k', 'dimgrey', 'grey', 'silver'], edgecolor='k', ecolor='k'):
     '''
     Plot tranistion counts.
 
@@ -298,14 +298,13 @@ def plot_transition_counts(ax, counts, w_names):
         Transition counts for each trj.
     w_names : list of str
         Water letter codes.
+    colors : list
+        Colors for the bar plots.
     '''
     ind = np.arange(len(w_names))
-    width = 0.1
 
     ind_clip = len(counts) / 2 - 0.5
     ind_bar = np.arange(-ind_clip, ind_clip + 1, 1)
-
-    colors = ['k', 'dimgrey', 'grey', 'silver']
 
     for i_key, key in enumerate(counts):
         means = np.mean(counts[key], axis=0)
@@ -317,7 +316,8 @@ def plot_transition_counts(ax, counts, w_names):
                yerr=errs,
                label=key,
                color=colors[i_key % 4],
-               edgecolor='k')
+               edgecolor=edgecolor,
+               error_kw={'ecolor':ecolor})
 
     ax.set_xticks(ind)
     ax.set(xticklabels=w_names)
