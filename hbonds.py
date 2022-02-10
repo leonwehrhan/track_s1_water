@@ -326,7 +326,7 @@ def hbond_most_frequent(hbond_trjs, s):
         Donors, that donate hydrogen bonds to the analyzed participant and their
         frequency how often they donate.
     acceptors_frequency : dict
-        Acceptors, that accept hydrogen bonds frpom analyzed participant and
+        Acceptors, that accept hydrogen bonds from analyzed participant and
         their frequency how often they accept.
     '''
     donates_to, accepts_from = hbond_timeline(hbond_trjs, s)
@@ -355,6 +355,20 @@ def hbond_most_frequent(hbond_trjs, s):
 
 def plot_frequency(ax, frequency, s, n=6, donors=True):
     '''
+    Plot the most frequent donors or acceptors.
+
+    Parameters
+    ----------
+    ax : plt.Axes
+        Matplotlib ax.
+    frequency : dict
+        Output from hbond_most_frequent.
+    s : str
+        Name of participant for plot title.
+    n : int
+        Number of donors/acceptors to plot.
+    donors : bool
+        Whether to plot donors or acceptors. Color donors blue, acceptors red.
     '''
     x = list(frequency.keys())[:n]
     y = np.array([frequency[x] for x in x]) * 100  # percentage
