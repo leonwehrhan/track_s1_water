@@ -202,6 +202,8 @@ def reduce_fluctuation(assigned_sites, t_l):
     '''
     if not assigned_sites.ndim == 2:
         raise ValueError('assigned_sites must have 2 dimensions.')
+    if not len(assigned_sites) % t_l == 0:
+        raise ValueError('trajectory length must be multiple of t_l.')
 
     assigned_sites_red = np.zeros(assigned_sites.shape, dtype=int)
     n_frames = assigned_sites.shape[0]
@@ -317,7 +319,7 @@ def plot_transition_counts(ax, counts, w_names, width=0.1, colors=['k', 'dimgrey
                label=key,
                color=colors[i_key % 4],
                edgecolor=edgecolor,
-               error_kw={'ecolor':ecolor})
+               error_kw={'ecolor': ecolor})
 
     ax.set_xticks(ind)
     ax.set(xticklabels=w_names)
