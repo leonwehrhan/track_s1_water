@@ -4,6 +4,7 @@ from context import track_s1_water as tw
 
 
 def test_voronoi():
+    '''Test for assign_water_sites_voronoi.'''
     assigned_sites = tw.assign_water_sites_voronoi('data/4y0z_a.pdb',
                                                    'data/4y0z_t.pdb',
                                                    [4078, 4081, 4072, 4084, 4075],
@@ -22,6 +23,7 @@ def test_voronoi():
 
 
 def test_reduce_fluctuation():
+    '''Test for reduce_fluctuation and count_transitions.'''
     assigned_sites = tw.assign_water_sites_voronoi('data/4y0z_fluc.pdb',
                                                    'data/4y0z_t.pdb',
                                                    [4078, 4081, 4072, 4084, 4075],
