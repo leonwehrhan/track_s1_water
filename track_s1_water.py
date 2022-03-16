@@ -367,4 +367,50 @@ def save_s1_trj(t, assigned_sites):
     t_new : md.Trajectory
         Derived from original trajectory with solvate and the assigned S1 water molecules.
     '''
-    
+    if not assigned_sites.ndim == 2:
+        raise ValueError('assigned_sites must have two dimensions and be shape (t.n_frames, n_wat).')
+    if not assigned_sites.shape[0] == t.n_frames:
+        raise ValueError('trajectory and assignment must have same length.')
+
+    n_wat = assigned_sites.shape[1]
+
+    s1_coords = np.zeros((t.n_frames, n_wat * 3, 3))
+    for i_frame, frame in enumerate(assigned_sites):
+        for i, ow in enumerate(frame):
+            if ow != 0:
+                r = t.top.atom(ow).residue
+                hs = []
+                for a in r.atoms:
+                    if a.element == md.element.hydrogen:
+                        hs.append(a.index)
+
+                if len(hs) != 2:
+                    raise ValueError(f'Water must have 2 Hs, not {len(hs)}')
+
+                s1_coords[i_frame][i * 3] = t.xyz[i_frame][ow]
+                s1_coords[i_frame][i * 3 + 1] = t.xyz[i_frame][hs[0]]
+                s1_coords[i_frame][i * 3 + 2] = t.xyz[i_frame][hs[1]]
+            else:
+                s1_coords[i_frame][i * 3] = np.zeros(3)
+                s1_coords[i_frame][i * 3 + 1] = np.zeros(3)
+                s1_coords[i_frame][i * 3 + 2] = np.zeros(3)
+
+    t_new = t.atom_slice(t.top.select('is_water == False'))
+
+    xyz_new = np.concatenate((t_new.xyz, s1_coords), axis=1)
+
+    t_new.top.add_chain()
+    # count chains
+    n_chains = 0
+    for c in t_new.top.chains:
+        n_chains += 1
+
+    for i in range(n_wat):
+        t_new.top.add_residue('HOH', t_new.top.chain(n_chains - 1), resSeq=i + 1)
+        t_new.top.add_atom('OW', md.element.oxygen, t_new.top.chain(t_new.top.n_chains - 1).residue(i))
+        t_new.top.add_atom('H1', md.element.hydrogen, t_new.top.chain(t_new.top.n_chains - 1).residue(i))
+        t_new.top.add_atom('H2', md.element.hydrogen, t_new.top.chain(t_new.top.n_chains - 1).residue(i))
+
+    t_new.xyz = xyz_new
+
+    return t_new
