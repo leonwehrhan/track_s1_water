@@ -349,3 +349,22 @@ def _dist(xyz, frame, idx1, idx2):
     coord_1 = xyz[frame][idx1]
     coord_2 = xyz[frame][idx2]
     return np.linalg.norm(coord_1 - coord_2)
+
+
+def save_s1_trj(t, assigned_sites):
+    '''
+    Make trajectory where all water has been deleted except the S1 waters.
+
+    Parameters
+    ----------
+    t : md.Trajectory
+        Original full water Trajectory.
+    assigned_sites : np.ndarray
+        Corresponding water oxygen id for each site and frame of t. Shape (t.n_frames, n_wat).
+
+    Returns
+    -------
+    t_new : md.Trajectory
+        Derived from original trajectory with solvate and the assigned S1 water molecules.
+    '''
+    
